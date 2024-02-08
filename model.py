@@ -7,9 +7,9 @@ import os
 import torch
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
-from pytorch_lightning import LightningModule
-from pytorch_lightning.callbacks.progress import TQDMProgressBar
-from pytorch_lightning.loggers import CSVLogger
+from lightning.pytorch import LightningModule
+from lightning.pytorch.callbacks.progress import TQDMProgressBar
+from lightning.pytorch.loggers import CSVLogger
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
@@ -59,8 +59,8 @@ class LitMNIST(LightningModule):
             nn.Linear(self.hidden_size, self.num_classes),
         )
 
-        self.val_accuracy = Accuracy()
-        self.test_accuracy = Accuracy()
+        self.val_accuracy = Accuracy(task="multiclass", num_classes=self.num_classes)
+        self.test_accuracy = Accuracy(task="multiclass", num_classes=self.num_classes)
 
     # Performs a forward pass of input through the network
     # Use for inference only (separate from training_step)
@@ -146,10 +146,10 @@ class LitMNIST(LightningModule):
             self.mnist_test = MNIST(self.data_dir, train=False, transform=self.transform)
 
     def train_dataloader(self):
-        return DataLoader(self.mnist_train, batch_size=self.batch_size)
+        return DataLoader(self.mnist_train, batch_size=self.batch_size, num_workers=4)
 
     def val_dataloader(self):
-        return DataLoader(self.mnist_val, batch_size=self.batch_size)
+        return DataLoader(self.mnist_val, batch_size=self.batch_size, num_workers=4)
 
     def test_dataloader(self):
-        return DataLoader(self.mnist_test, batch_size=self.batch_size)
+        return DataLoader(self.mnist_test, batch_size=self.batch_size, num_workers=4)

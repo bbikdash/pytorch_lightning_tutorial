@@ -9,9 +9,9 @@ import torch
 from torch import utils
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
-from pytorch_lightning import LightningModule, Trainer
-from pytorch_lightning.callbacks.progress import TQDMProgressBar
-from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger
+from lightning.pytorch import Trainer
+from lightning.pytorch.callbacks.progress import TQDMProgressBar
+from lightning.pytorch.loggers import CSVLogger, TensorBoardLogger
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
@@ -49,29 +49,29 @@ args = parser.parse_args()
 #%% Initialize the autoencoder with the namespace directly
 # model = LitMNIST(args)
 model = LitMNIST.load_from_checkpoint("./logs/MNIST Logs/version_2/checkpoints/epoch=9-step=2150.ckpt")
-# trainer = Trainer(
-#     accelerator="auto",
-#     devices=1 if torch.cuda.is_available() else None,  # limiting got iPython runs
-#     max_epochs=3,
-#     callbacks=[TQDMProgressBar(refresh_rate=20)],
-#     logger=CSVLogger(save_dir="./logs/"),
-# )
-
-trainer = Trainer.from_argparse_args(args,
-    callbacks=[TQDMProgressBar(refresh_rate=20)],
-    logger=TensorBoardLogger(save_dir="./logs/", name="MNIST Logs"),
-    # logger=CSVLogger(save_dir="./logs/"),
-    # default_root_dir="./checkpoints"
-)
-trainer.fit(model)
-
 
 #%% Setup data loading
-# dataset = MNIST(os.getcwd(), download=True, transform=ToTensor())
-# train_loader = utils.data.DataLoader(dataset)
+dataset = MNIST(os.getcwd(), download=True, transform=ToTensor())
+train_loader = utils.data.DataLoader(dataset)
 
 
 #%% Train the model
+trainer = Trainer(
+    accelerator="auto",
+    devices=1 if torch.cuda.is_available() else None,  # limiting got iPython runs
+    max_epochs=3,
+    callbacks=[TQDMProgressBar(refresh_rate=20)],
+    logger=CSVLogger(save_dir="./logs/"),
+)
+
+# trainer = Trainer.from_argparse_args(args,
+#     callbacks=[TQDMProgressBar(refresh_rate=20)],
+#     logger=TensorBoardLogger(save_dir="./logs/", name="MNIST Logs"),
+    # logger=CSVLogger(save_dir="./logs/"),
+    # default_root_dir="./checkpoints"
+# )
+trainer.fit(model)
+
 # train the model (hint: here are some helpful Trainer arguments for rapid idea iteration)
 # trainer = pl.Trainer(accelerator="gpu", devices=1, limit_train_batches=100, max_epochs=1)
 
