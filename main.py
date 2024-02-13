@@ -39,16 +39,19 @@ parser.add_argument("--hidden_size", type=int, default=64)
 # Add trainer level args
 # These arguments are parsed internally by pl.Trainer and correspond to basic attributes of the Trainer class
 parser.add_argument_group("Training_Args")
-parser.add_argument("-lr", "--learning_rate", type=str, default=5e-5)
-parser.add_argument("--max_epochs", type=str, default=10)
+parser.add_argument("-lr", "--learning_rate", type=float, default=5e-5)
+parser.add_argument("--max_epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=256)
 parser.add_argument("-a", "--accelerator", type=str, default="gpu")
-parser.add_argument("--devices", type=int, default=-1)
+parser.add_argument("--devices", type=int, default=1) # To select which GPUs to use: https://lightning.ai/docs/pytorch/stable/accelerators/gpu_basic.html
+parser.add_argument("-ckpt", type=str, default=None, help="Path to weights to warmstart the model")
 args = parser.parse_args()
 
 #%% Initialize the autoencoder with the namespace directly
-# model = LitMNIST(args)
-model = LitMNIST.load_from_checkpoint("./logs/MNIST Logs/version_2/checkpoints/epoch=9-step=2150.ckpt")
+if args.ckpt is None:
+    model = LitMNIST(args)
+else:
+    model = LitMNIST.load_from_checkpoint(args.ckpt)
 
 #%% Setup data loading
 dataset = MNIST(os.getcwd(), download=True, transform=ToTensor())
@@ -58,8 +61,8 @@ train_loader = utils.data.DataLoader(dataset)
 #%% Train the model
 trainer = Trainer(
     accelerator="auto",
-    devices=1 if torch.cuda.is_available() else None,  # limiting got iPython runs
-    max_epochs=3,
+    devices=args.devices,  # limiting got iPython runs
+    max_epochs=args.max_epochs,
     callbacks=[TQDMProgressBar(refresh_rate=20)],
     logger=CSVLogger(save_dir="./logs/"),
 )
@@ -73,7 +76,7 @@ trainer = Trainer(
 trainer.fit(model)
 
 # train the model (hint: here are some helpful Trainer arguments for rapid idea iteration)
-# trainer = pl.Trainer(accelerator="gpu", devices=1, limit_train_batches=100, max_epochs=1)
+# trainer = Trainer(accelerator="gpu", devices=1, limit_train_batches=100, max_epochs=1)
 
 #%% Testing
 #
